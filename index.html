@@ -1,0 +1,239 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Modern Healthcare Registration</title>
+  <link href="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/css/bootstrap.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.0/css/all.min.css" rel="stylesheet">
+  <link href="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.css" rel="stylesheet">
+  <style>
+    body {
+      background-color: #f3f4f6;
+      font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+    }
+
+    .container {
+      max-width: 600px;
+    }
+
+    .form-card {
+      background: #ffffff;
+      box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+      border-radius: 12px;
+      padding: 30px;
+      margin-top: 30px;
+    }
+
+    h2 {
+      font-weight: bold;
+      color: #333;
+    }
+
+    .form-label {
+      font-weight: 600;
+      color: #555;
+    }
+
+    .form-icon {
+      color: #2b6777;
+      margin-right: 10px;
+    }
+
+    .btn-primary {
+      background-color: #007bff;
+      border: none;
+      font-weight: bold;
+      transition: background-color 0.3s ease;
+    }
+
+    .btn-primary:hover {
+      background-color: #0056b3;
+    }
+
+    .btn-outline-secondary {
+      font-weight: 600;
+      border-color: #007bff;
+      color: #007bff;
+    }
+
+    .btn-outline-secondary:hover {
+      background-color: #007bff;
+      color: #fff;
+    }
+
+    .crop-container {
+      position: relative;
+      width: 150px;
+      height: 150px;
+      margin: auto;
+      overflow: hidden;
+      border-radius: 50%;
+      border: 3px solid #007bff;
+      background-color: #e9ecef;
+      display: flex;
+      justify-content: center;
+      align-items: center;
+    }
+
+    #preview {
+      width: 100%;
+      height: auto;
+      display: none;
+    }
+
+    .modern-input {
+      background-color: #f8f9fc;
+      border: 1px solid #ced4da;
+      border-radius: 8px;
+      padding: 10px 15px;
+      transition: border-color 0.3s ease;
+    }
+
+    .modern-input:focus {
+      border-color: #007bff;
+      box-shadow: 0 0 0 0.25rem rgba(0, 123, 255, 0.25);
+    }
+
+    #cropModal .modal-dialog {
+      max-width: 500px;
+    }
+
+    .hide {
+      display: none;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Registration Form Section -->
+    <div id="registrationFormSection" class="form-card">
+      <h2 class="text-center"><i class="fas fa-user-plus"></i> Register Your Account</h2>
+      <p class="text-center text-muted">Complete your details below to get started</p>
+
+      <form id="registrationForm">
+        <!-- Profile Photo Upload Section -->
+        <div id="profilePhotoSection" class="mt-4">
+          <h5 class="text-center"><i class="fas fa-camera"></i> Upload Profile Photo</h5>
+          <div class="crop-container mt-3">
+            <img id="preview" alt="Preview" />
+          </div>
+          <input type="file" class="form-control mt-3" id="uploadPhoto" accept="image/*" required>
+          <button type="button" class="btn btn-outline-secondary mt-2 w-100" data-bs-toggle="modal" data-bs-target="#cropModal">
+            Adjust Photo
+          </button>
+        </div>
+
+        <!-- Dynamic Role-Based Form -->
+        <div id="dynamicForm" class="mt-4">
+          <!-- Default Fields will dynamically appear here based on role selection -->
+        </div>
+
+        <!-- Submit Button -->
+        <button type="submit" class="btn btn-primary w-100 mt-4">Complete Registration</button>
+      </form>
+    </div>
+  </div>
+
+  <!-- Modal for cropping -->
+  <div class="modal fade" id="cropModal" tabindex="-1" aria-labelledby="cropModalLabel" aria-hidden="true">
+    <div class="modal-dialog">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="cropModalLabel">Adjust Profile Photo</h5>
+          <button type="button" class="btn-close" data-bs-dismiss="modal" aria-label="Close"></button>
+        </div>
+        <div class="modal-body">
+          <div class="img-container">
+            <img id="croppingImage" style="width: 100%;" />
+          </div>
+        </div>
+        <div class="modal-footer">
+          <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+          <button type="button" id="cropButton" class="btn btn-primary">Crop & Save</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <script src="https://cdn.jsdelivr.net/npm/bootstrap@5.3.0/dist/js/bootstrap.bundle.min.js"></script>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/cropperjs/1.5.13/cropper.min.js"></script>
+  <script>
+    let cropper;
+    const uploadPhoto = document.getElementById('uploadPhoto');
+    const croppingImage = document.getElementById('croppingImage');
+    const preview = document.getElementById('preview');
+    const dynamicForm = document.getElementById('dynamicForm');
+
+    // Role-specific fields are predefined here:
+    const roleForms = {
+      patient: `
+        <div class="mb-3">
+          <label for="patientName" class="form-label">Full Name</label>
+          <input type="text" class="modern-input form-control" id="patientName" placeholder="Enter your name" required>
+        </div>
+        <div class="mb-3">
+          <label for="dob" class="form-label">Date of Birth</label>
+          <input type="date" class="modern-input form-control" id="dob" required>
+        </div>
+      `,
+      doctor: `
+        <div class="mb-3">
+          <label for="doctorName" class="form-label">Full Name</label>
+          <input type="text" class="modern-input form-control" id="doctorName" placeholder="Enter your name" required>
+        </div>
+        <div class="mb-3">
+          <label for="specialty" class="form-label">Specialty</label>
+          <input type="text" class="modern-input form-control" id="specialty" placeholder="Enter your specialty" required>
+        </div>
+      `,
+      caregiver: `
+        <div class="mb-3">
+          <label for="caregiverName" class="form-label">Full Name</label>
+          <input type="text" class="modern-input form-control" id="caregiverName" placeholder="Enter your name" required>
+        </div>
+        <div class="mb-3">
+          <label for="caregiverPhone" class="form-label">Phone Number</label>
+          <input type="tel" class="modern-input form-control" id="caregiverPhone" placeholder="Enter phone number" required>
+        </div>
+      `
+    };
+
+    // This would dynamically load the correct fields based on role selection (you can call this after your role selection logic)
+    function loadForm(role) {
+      dynamicForm.innerHTML = roleForms[role] || '';
+    }
+
+    uploadPhoto.addEventListener('change', (event) => {
+      const files = event.target.files;
+      if (files && files.length > 0) {
+        const file = files[0];
+        const url = URL.createObjectURL(file);
+        croppingImage.src = url;
+        preview.src = url;
+        preview.style.display = 'block';
+        setTimeout(() => {
+          if (cropper) cropper.destroy();
+          cropper = new Cropper(croppingImage, {
+            aspectRatio: 1,
+            viewMode: 2,
+            preview: '.crop-container'
+          });
+        }, 300);
+      }
+    });
+
+    document.getElementById('cropButton').addEventListener('click', () => {
+      const canvas = cropper.getCroppedCanvas({
+        width: 150,
+        height: 150
+      });
+      preview.src = canvas.toDataURL();
+      cropper.destroy();
+      cropper = null;
+      const modal = bootstrap.Modal.getInstance(document.getElementById('cropModal'));
+      modal.hide();
+    });
+  </script>
+</body>
+</html>
